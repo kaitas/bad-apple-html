@@ -95,6 +95,27 @@
             border-color: var(--kernel-green);
             color: var(--kernel-green);
         }
+        .channels {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #080808;
+            border: 1px solid #333;
+        }
+        .channels label {
+            font-size: 10px;
+            color: #888;
+            cursor: pointer;
+            padding: 4px 8px;
+            border: 1px solid #333;
+        }
+        .channels label:hover { border-color: #666; }
+        .channels input:checked + span {
+            color: var(--kernel-green);
+        }
+        .channels input { display: none; }
         .knobs {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -164,6 +185,10 @@
             <button class="effect-btn" data-effect="1">Echo</button>
             <button class="effect-btn" data-effect="2">Flanger</button>
             <button class="effect-btn" data-effect="3">Distortion</button>
+        </div>
+
+        <div class="channels" id="channelSelect">
+            <!-- Populated by JavaScript -->
         </div>
 
         <div class="knobs">
@@ -252,18 +277,70 @@ async function loadScore() {
         const res = await fetch('bad_apple_guitar_scores.json');
         scoreData = await res.json();
 
-        // Use channel 2 (Lead) with highest notes
-        const ch = scoreData.channels['2'];
-        if (ch && ch.monophonic && ch.monophonic.highest) {
-            scoreNotes = ch.monophonic.highest;
-            totalDuration = ch.duration;
-            printLog(`Score loaded: ${scoreNotes.length} notes, ${totalDuration.toFixed(1)}s`, 'ok');
-            return true;
-        }
+        // Build channel checkboxes
+        const channelSelect = document.getElementById('channelSelect');
+        const channels = scoreData.channels;
+        const recommended = ['2', '6'];  // Lead channels with most notes
+
+        Object.keys(channels).sort((a, b) => Number(a) - Number(b)).forEach(ch => {
+            const info = channels[ch];
+            const notes = info.monophonic?.highest || [];
+            if (notes.length < 10) return;  // Skip channels with few notes
+
+            const label = document.createElement('label');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = ch;
+            checkbox.checked = recommended.includes(ch);
+            checkbox.addEventListener('change', updateSelectedChannels);
+
+            const span = document.createElement('span');
+            span.textContent = `CH${ch} (${notes.length})`;
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            channelSelect.appendChild(label);
+        });
+
+        updateSelectedChannels();
+        printLog(`Score loaded: ${Object.keys(channels).length} channels`, 'ok');
+        return true;
     } catch (e) {
         printLog(`Score load failed: ${e.message}`, 'err');
     }
     return false;
+}
+
+// Merge notes from selected channels
+function updateSelectedChannels() {
+    const checkboxes = document.querySelectorAll('#channelSelect input:checked');
+    const selectedChs = Array.from(checkboxes).map(cb => cb.value);
+
+    // Collect all notes with absolute start times
+    let allNotes = [];
+    selectedChs.forEach(ch => {
+        const info = scoreData.channels[ch];
+        const notes = info?.monophonic?.highest || [];
+        let time = 0;
+        notes.forEach(note => {
+            allNotes.push({ t: time, f: note.f, d: note.d });
+            time += note.d;
+        });
+    });
+
+    // Sort by start time and convert back to sequential format
+    allNotes.sort((a, b) => a.t - b.t);
+
+    // Convert to duration-based format (time between note starts)
+    scoreNotes = [];
+    for (let i = 0; i < allNotes.length; i++) {
+        const note = allNotes[i];
+        const nextTime = (i + 1 < allNotes.length) ? allNotes[i + 1].t : note.t + note.d;
+        scoreNotes.push({ f: note.f, d: nextTime - note.t });
+    }
+
+    totalDuration = allNotes.length > 0 ? allNotes[allNotes.length - 1].t + allNotes[allNotes.length - 1].d : 0;
+    printLog(`Channels: [${selectedChs.join(',')}] → ${scoreNotes.length} notes, ${totalDuration.toFixed(1)}s`);
 }
 
 // Initialize Wasm
