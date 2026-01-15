@@ -157,6 +157,36 @@
         .log .warn { color: #ffb86c; }
         .info { margin-top: 20px; font-size: 12px; color: #666; }
         .info a { color: var(--kernel-green); }
+        .bpm-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #080808;
+            border: 1px solid #333;
+        }
+        .bpm-control label { color: #888; font-size: 12px; min-width: 35px; }
+        .bpm-control input { flex: 1; accent-color: var(--kernel-green); }
+        .bpm-control span { color: var(--kernel-green); font-size: 14px; min-width: 40px; }
+        .lang-btn { min-width: 50px; font-size: 18px; }
+        .effect-btn[title] { position: relative; }
+        .effect-btn:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #222;
+            border: 1px solid var(--kernel-green);
+            padding: 8px 12px;
+            font-size: 11px;
+            white-space: pre-line;
+            max-width: 200px;
+            z-index: 100;
+            color: #ccc;
+            text-transform: none;
+        }
     </style>
 </head>
 <body>
@@ -176,15 +206,25 @@
             <button class="btn orange" id="btnPlay" disabled>PLAY BAD APPLE</button>
             <button class="btn" id="btnStop" disabled>STOP</button>
             <button class="btn" id="btnMute" disabled>MUTE</button>
+            <button class="btn lang-btn" id="btnLang">🇬🇧</button>
+        </div>
+
+        <div class="bpm-control">
+            <label data-i18n="bpm">BPM</label>
+            <input type="range" id="bpmSlider" min="50" max="200" step="1" value="138">
+            <span id="bpmValue">138</span>
         </div>
 
         <div class="progress-bar"><div class="fill" id="progress"></div></div>
 
         <div class="effect-select" id="effectSelect">
-            <button class="effect-btn active" data-effect="0">Phaser</button>
-            <button class="effect-btn" data-effect="1">Echo</button>
-            <button class="effect-btn" data-effect="2">Flanger</button>
-            <button class="effect-btn" data-effect="3">Distortion</button>
+            <button class="effect-btn active" data-effect="0" data-i18n-title="phaser_tip">Phaser</button>
+            <button class="effect-btn" data-effect="1" data-i18n-title="echo_tip">Echo</button>
+            <button class="effect-btn" data-effect="2" data-i18n-title="flanger_tip">Flanger</button>
+            <button class="effect-btn" data-effect="3" data-i18n-title="distortion_tip">Distortion</button>
+            <button class="effect-btn" data-effect="4" data-i18n-title="fm_tip">FM</button>
+            <button class="effect-btn" data-effect="5" data-i18n-title="am_tip">AM</button>
+            <button class="effect-btn" data-effect="6" data-i18n-title="discont_tip">Discont</button>
         </div>
 
         <div class="channels" id="channelSelect">
@@ -236,6 +276,45 @@
 <script src="audionoise_single.js"></script>
 
 <script>
+// i18n データ
+const i18n = {
+    en: {
+        bpm: 'BPM',
+        phaser_tip: 'Phaser\n4-stage allpass filter\nClassic sweeping sound',
+        echo_tip: 'Echo\nDelay + feedback\nSpace and depth',
+        flanger_tip: 'Flanger\nModulated short delay\nJet-like swoosh',
+        distortion_tip: 'Distortion\nHard/soft clipping\nAggressive tone',
+        fm_tip: 'FM\nFrequency modulation\nBell-like tones',
+        am_tip: 'AM\nAmplitude modulation\nTremolo effect',
+        discont_tip: 'Discont\nPitch shifter\nOctave up/down'
+    },
+    ja: {
+        bpm: 'テンポ',
+        phaser_tip: 'フェイザー\n4段オールパスフィルタ\nうねるようなサウンド',
+        echo_tip: 'エコー\nディレイ＋フィードバック\n空間と奥行き',
+        flanger_tip: 'フランジャー\n変調ショートディレイ\nジェット機のような音',
+        distortion_tip: 'ディストーション\nハード/ソフトクリップ\n攻撃的なトーン',
+        fm_tip: 'FM変調\n周波数変調\nベルのような音色',
+        am_tip: 'AM変調\n振幅変調\nトレモロ効果',
+        discont_tip: 'ディスコント\nピッチシフター\nオクターブ上下'
+    }
+};
+
+let currentLang = navigator.language.startsWith('ja') ? 'ja' : 'en';
+
+function updateI18n() {
+    const lang = i18n[currentLang];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (lang[key]) el.textContent = lang[key];
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.dataset.i18nTitle;
+        if (lang[key]) el.title = lang[key];
+    });
+    document.getElementById('btnLang').textContent = currentLang === 'ja' ? '🇬🇧' : '🇯🇵';
+}
+
 const log = document.getElementById('log');
 const status = document.getElementById('status');
 const progress = document.getElementById('progress');
@@ -262,6 +341,7 @@ let scoreIndex = 0;
 let scoreNotes = [];
 let startTime = 0;
 let totalDuration = 0;
+let bpmMultiplier = 1.0;  // BPM調整用
 
 function printLog(msg, type = '') {
     const div = document.createElement('div');
@@ -407,12 +487,12 @@ function processAudio(e) {
         if (isPlaying && now >= noteEndTime && scoreIndex < scoreNotes.length) {
             const note = scoreNotes[scoreIndex];
             currentFreq = note.f;
-            noteEndTime = now + note.d;
+            noteEndTime = now + note.d * bpmMultiplier;  // BPM調整
             scoreIndex++;
 
             // Update progress
             const elapsed = now - startTime;
-            progress.style.width = Math.min(100, (elapsed / totalDuration) * 100) + '%';
+            progress.style.width = Math.min(100, (elapsed / (totalDuration * bpmMultiplier)) * 100) + '%';
         }
 
         // Generate sawtooth wave
@@ -440,7 +520,18 @@ function processAudio(e) {
 
 // Play score
 function playScore() {
-    if (!audioCtx || !scoreNotes.length) return;
+    if (!audioCtx) return;
+
+    // 全チャンネルをONにする
+    document.querySelectorAll('#channelSelect input').forEach(cb => {
+        cb.checked = true;
+    });
+    updateSelectedChannels();
+
+    if (!scoreNotes.length) {
+        printLog('No notes to play', 'warn');
+        return;
+    }
 
     scoreIndex = 0;
     currentFreq = 0;
@@ -450,7 +541,7 @@ function playScore() {
     isPlaying = true;
 
     document.getElementById('btnPlay').classList.add('active');
-    printLog('Playing Bad Apple!!', 'ok');
+    printLog('Playing Bad Apple!! (all channels)', 'ok');
 }
 
 // Stop score
@@ -498,6 +589,7 @@ function drawScope() {
 }
 
 // Effect selection
+const effectNames = ['phaser', 'echo', 'flanger', 'distortion', 'fm', 'am', 'discont'];
 document.querySelectorAll('.effect-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
@@ -505,7 +597,7 @@ document.querySelectorAll('.effect-btn').forEach(btn => {
         const idx = parseInt(btn.dataset.effect);
         if (set_effect) {
             set_effect(idx);
-            printLog(`Effect: ${['phaser', 'echo', 'flanger', 'distortion'][idx]}`);
+            printLog(`Effect: ${effectNames[idx]}`);
             updatePots();
         }
     });
@@ -531,6 +623,23 @@ document.getElementById('btnPlay').addEventListener('click', playScore);
 document.getElementById('btnStop').addEventListener('click', () => { stopScore(); printLog('Stopped'); });
 document.getElementById('btnMute').addEventListener('click', toggleMute);
 
+// BPM slider (138 BPM = 1.0x, range 50-200)
+const bpmSlider = document.getElementById('bpmSlider');
+const bpmValue = document.getElementById('bpmValue');
+bpmSlider.addEventListener('input', () => {
+    const bpm = parseInt(bpmSlider.value);
+    bpmValue.textContent = bpm;
+    bpmMultiplier = 138 / bpm;  // 138 BPMが原曲テンポ
+    printLog(`BPM: ${bpm} (${(1/bpmMultiplier).toFixed(2)}x speed)`);
+});
+
+// Language toggle
+document.getElementById('btnLang').addEventListener('click', () => {
+    currentLang = currentLang === 'ja' ? 'en' : 'ja';
+    updateI18n();
+    printLog(`Language: ${currentLang.toUpperCase()}`);
+});
+
 // Canvas resize
 function resizeCanvas() {
     canvas.width = canvas.offsetWidth;
@@ -541,6 +650,7 @@ resizeCanvas();
 
 // Initialize
 (async () => {
+    updateI18n();  // 言語設定を適用
     status.textContent = 'Loading...';
 
     const wasmOk = await initWasm();
