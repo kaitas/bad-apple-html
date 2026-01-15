@@ -31,10 +31,34 @@ http://localhost:8000/bad-apple-html/
 ## Controls
 
 - **STOMP**: start/suspend the audio engine.
-- **PLAY**: play selected channels.
+- **PLAY**: play selected channels (enables all channels).
 - **MUTE**: toggle master output.
-- **Channel Matrix**: toggle any MIDI channel on/off and choose a note strategy (highest/lowest).
-- **Knobs**: LFO speed, feedback, center frequency, resonance (Q).
+- **Channel Matrix**: toggle any MIDI channel on/off.
+- **BPM Slider**: adjust playback speed (50-200 BPM).
+- **Knobs (Pot1-4)**: effect parameters (see table below).
+
+## Pot Mapping per Effect
+
+Each effect uses 4 potentiometers differently, just like Linus designed for a physical guitar pedal:
+
+### Guitar Effects (process input signal)
+
+| Effect | Pot1 | Pot2 | Pot3 | Pot4 |
+|--------|------|------|------|------|
+| **Phaser** | LFO Period [25-2000ms] | Feedback [0-75%] | Center Freq [50-880Hz] | Q [0.25-2.0] |
+| **Echo** | Delay Time [0-1000ms] | (unused) | LFO Depth [0-4ms] | Feedback [0-100%] |
+| **Flanger** | LFO Speed [0-10Hz²] | Delay [0-4ms] | Depth [0-100%] | Feedback [0-100%] |
+| **Distortion** | Drive [1-50x] | Tone [1-10kHz] | Level [0-100%] | Mode [soft/hard/asym] |
+| **Discont** | Pitch Ratio [0.5-2.0x] | (unused) | (unused) | (unused) |
+
+### Synth Effects (ignore input, generate test tones)
+
+| Effect | Pot1 | Pot2 | Pot3 | Pot4 |
+|--------|------|------|------|------|
+| **FM** | Volume [0-100%] | Carrier [100-8100Hz] | Mod Depth [±1 oct] | Mod Freq [1-11Hz] |
+| **AM** | Volume [0-100%] | Carrier [100-8100Hz] | Mod Depth [0-100%] | Mod Freq [1-11Hz] |
+
+> **Note**: FM/AM are test tone generators from Linus's `convert.c`. They completely ignore the input signal and generate their own sound.
 
 ## Data: JSON Score Format
 

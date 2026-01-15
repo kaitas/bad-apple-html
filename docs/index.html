@@ -9,6 +9,15 @@
             --kernel-bg: #0c0c0c;
             --kernel-border: #444;
             --kernel-text: #bbbbbb;
+            /* Effect colors */
+            --color-phaser: #00ffff;    /* Cyan */
+            --color-echo: #ff00ff;      /* Magenta */
+            --color-flanger: #00ff41;   /* Green */
+            --color-distortion: #ff3333; /* Red */
+            --color-fm: #ff9800;        /* Orange */
+            --color-am: #ffeb3b;        /* Yellow */
+            --color-discont: #9c27b0;   /* Purple */
+            --current-effect-color: var(--color-phaser);
         }
         body {
             background: #000;
@@ -92,43 +101,47 @@
             font-weight: bold;
         }
         .effect-btn:hover { border-color: #666; }
-        .effect-btn.active {
-            border-color: var(--kernel-green);
-            color: var(--kernel-green);
-        }
-        .effect-btn.synth {
-            border-color: #666;
-            color: #ff9800;
-        }
-        .effect-btn.synth:hover {
-            border-color: #ff9800;
-        }
-        .effect-btn.synth.active {
-            border-color: #ff9800;
-            color: #ff9800;
-            box-shadow: 0 0 8px #ff980044;
-        }
+        .effect-btn.active { box-shadow: 0 0 10px var(--current-effect-color); }
+        /* Individual effect colors */
+        .effect-btn[data-effect="0"] { color: var(--color-phaser); }
+        .effect-btn[data-effect="0"].active { border-color: var(--color-phaser); }
+        .effect-btn[data-effect="1"] { color: var(--color-echo); }
+        .effect-btn[data-effect="1"].active { border-color: var(--color-echo); }
+        .effect-btn[data-effect="2"] { color: var(--color-flanger); }
+        .effect-btn[data-effect="2"].active { border-color: var(--color-flanger); }
+        .effect-btn[data-effect="3"] { color: var(--color-distortion); }
+        .effect-btn[data-effect="3"].active { border-color: var(--color-distortion); }
+        .effect-btn[data-effect="4"] { color: var(--color-fm); }
+        .effect-btn[data-effect="4"].active { border-color: var(--color-fm); }
+        .effect-btn[data-effect="5"] { color: var(--color-am); }
+        .effect-btn[data-effect="5"].active { border-color: var(--color-am); }
+        .effect-btn[data-effect="6"] { color: var(--color-discont); }
+        .effect-btn[data-effect="6"].active { border-color: var(--color-discont); }
         .channels {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
             margin-bottom: 20px;
-            padding: 10px;
+            padding: 12px;
             background: #080808;
             border: 1px solid #333;
         }
         .channels label {
-            font-size: 12px;
+            font-size: 13px;
             color: #888;
             cursor: pointer;
-            padding: 6px 10px;
+            padding: 10px 12px;
             border: 1px solid #333;
+            min-width: 140px;
         }
         .channels label:hover { border-color: #666; }
-        .channels input:checked + span {
+        .channels input:checked + .ch-info {
             color: var(--kernel-green);
         }
         .channels input { display: none; }
+        .ch-info { display: flex; flex-direction: column; gap: 2px; }
+        .ch-name { font-weight: bold; font-size: 14px; }
+        .ch-meta { font-size: 11px; opacity: 0.7; }
         .knobs {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -143,12 +156,13 @@
         .knob label {
             display: block;
             color: #aaa;
-            font-size: 13px;
+            font-size: 11px;
             margin-bottom: 10px;
-            text-transform: uppercase;
+            min-height: 2.5em;
+            line-height: 1.2;
         }
-        .knob input { width: 100%; accent-color: var(--kernel-green); height: 8px; }
-        .knob-value { font-size: 14px; color: var(--kernel-green); text-align: right; margin-top: 5px; }
+        .knob input { width: 100%; accent-color: var(--current-effect-color); height: 8px; }
+        .knob-value { font-size: 14px; color: var(--current-effect-color); text-align: right; margin-top: 5px; }
         canvas {
             width: 100%;
             height: 120px;
@@ -225,6 +239,38 @@
             background: var(--kernel-green);
             box-shadow: 0 0 12px var(--kernel-green);
         }
+        .help-section {
+            margin-bottom: 15px;
+        }
+        .help-section summary {
+            cursor: pointer;
+            color: #888;
+            font-size: 12px;
+            padding: 8px;
+            background: #080808;
+            border: 1px solid #333;
+        }
+        .help-section summary:hover { color: var(--kernel-green); }
+        .help-section[open] summary { border-bottom: none; }
+        .help-table {
+            background: #080808;
+            border: 1px solid #333;
+            border-top: none;
+            padding: 10px;
+            font-size: 11px;
+            overflow-x: auto;
+        }
+        .help-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .help-table th, .help-table td {
+            padding: 4px 8px;
+            text-align: left;
+            border-bottom: 1px solid #222;
+        }
+        .help-table th { color: var(--kernel-green); }
+        .help-table .synth-row { color: #ff9800; }
     </style>
 </head>
 <body>
@@ -264,10 +310,27 @@
             <button class="effect-btn" data-effect="1" data-i18n-title="echo_tip">Echo</button>
             <button class="effect-btn" data-effect="2" data-i18n-title="flanger_tip">Flanger</button>
             <button class="effect-btn" data-effect="3" data-i18n-title="distortion_tip">Distortion</button>
-            <button class="effect-btn synth" data-effect="4" data-i18n-title="fm_tip">FM</button>
-            <button class="effect-btn synth" data-effect="5" data-i18n-title="am_tip">AM</button>
+            <button class="effect-btn" data-effect="4" data-i18n-title="fm_tip">FM</button>
+            <button class="effect-btn" data-effect="5" data-i18n-title="am_tip">AM</button>
             <button class="effect-btn" data-effect="6" data-i18n-title="discont_tip">Discont</button>
         </div>
+
+        <details class="help-section">
+            <summary data-i18n="help_title">Pot Mapping Reference (click to expand)</summary>
+            <div class="help-table">
+                <table>
+                    <tr><th>Effect</th><th>Pot1</th><th>Pot2</th><th>Pot3</th><th>Pot4</th></tr>
+                    <tr style="color:var(--color-phaser)"><td>Phaser</td><td>LFO [25-2000ms]</td><td>FB [0-75%]</td><td>Freq [50-880Hz]</td><td>Q [0.25-2]</td></tr>
+                    <tr style="color:var(--color-echo)"><td>Echo</td><td>Delay [0-1s]</td><td>-</td><td>LFO [0-4ms]</td><td>FB [0-100%]</td></tr>
+                    <tr style="color:var(--color-flanger)"><td>Flanger</td><td>Speed [0-10Hz]</td><td>Delay [0-4ms]</td><td>Depth</td><td>FB</td></tr>
+                    <tr style="color:var(--color-distortion)"><td>Distortion</td><td>Drive [1-50x]</td><td>Tone [1-10k]</td><td>Level</td><td>Mode</td></tr>
+                    <tr style="color:var(--color-fm)"><td>FM *</td><td>Volume</td><td>Carrier</td><td>Mod Depth</td><td>Mod Hz</td></tr>
+                    <tr style="color:var(--color-am)"><td>AM *</td><td>Volume</td><td>Carrier</td><td>Mod Depth</td><td>Mod Hz</td></tr>
+                    <tr style="color:var(--color-discont)"><td>Discont</td><td>Pitch [0.5-2x]</td><td>-</td><td>-</td><td>-</td></tr>
+                </table>
+                <div style="margin-top:8px;color:#888;font-size:10px;">* FM/AM = Synth (test tone generators, ignore input)</div>
+            </div>
+        </details>
 
         <div class="channels" id="channelSelect">
             <!-- Populated by JavaScript -->
@@ -322,6 +385,7 @@
 const i18n = {
     en: {
         bpm: 'BPM',
+        help_title: 'Pot Mapping Reference (click to expand)',
         phaser_tip: '🎸 Phaser\n4-stage biquad allpass\nLFO: 32-bit phase accumulator\n"The classic 70s swoosh"\nLinus uses triangle wave LFO',
         echo_tip: '🎸 Echo\n65536-sample delay line (~1.3s)\nLinear interpolation for\nfractional delay reads\nPot1=delay Pot4=feedback',
         flanger_tip: '🎸 Flanger\n0-4ms modulated delay\nShort delay + LFO = jet sound\nPot1=speed Pot2=delay\nPot3=depth Pot4=feedback',
@@ -332,6 +396,7 @@ const i18n = {
     },
     ja: {
         bpm: 'テンポ',
+        help_title: 'Potマッピング早見表（クリックで展開）',
         phaser_tip: '🎸 フェイザー\n4段バイクアッド・オールパス\nLFO: 32bit位相アキュムレータ\n「70年代の定番サウンド」\nLinus製の三角波LFO',
         echo_tip: '🎸 エコー\n65536サンプル遅延線(約1.3秒)\n分数サンプルは線形補間\nPot1=遅延時間 Pot4=FB\nfastpow()でスムーズ減衰',
         flanger_tip: '🎸 フランジャー\n0-4ms 変調ディレイ\n短い遅延+LFO=ジェット音\nPot1=速度 Pot2=遅延\nPot3=深さ Pot4=FB',
@@ -364,6 +429,17 @@ const potLabels = {
     }
 };
 
+// Potの値の意味 (0.0-1.0 → 実際の値)
+const potRanges = {
+    phaser:     ['25-2000ms', '0-75%', '50-880Hz', '0.25-2.0'],
+    echo:       ['0-1000ms', '-', '0-4ms', '0-100%'],
+    flanger:    ['0-10Hz²', '0-4ms', '0-100%', '0-100%'],
+    distortion: ['1-50x', '1-10kHz', '0-100%', 'soft/hard/asym'],
+    fm:         ['0-100%', '100-8100Hz', '±1 oct', '1-11Hz'],
+    am:         ['0-100%', '100-8100Hz', '0-100%', '1-11Hz'],
+    discont:    ['0.5-2.0x', '-', '-', '-']
+};
+
 let currentLang = navigator.language.startsWith('ja') ? 'ja' : 'en';
 
 let currentEffect = 'phaser';
@@ -384,10 +460,14 @@ function updateI18n() {
 
 function updatePotLabels() {
     const labels = potLabels[currentLang][currentEffect];
+    const ranges = potRanges[currentEffect];
     if (!labels) return;
     for (let i = 0; i < 4; i++) {
         const el = document.getElementById(`pot${i+1}label`);
-        if (el) el.textContent = `Pot${i+1}: ${labels[i]}`;
+        if (el) {
+            const range = ranges && ranges[i] !== '-' ? ` [${ranges[i]}]` : '';
+            el.textContent = `Pot${i+1}: ${labels[i]}${range}`;
+        }
     }
 }
 
@@ -434,7 +514,7 @@ async function loadScore() {
         const res = await fetch('bad_apple_guitar_scores.json');
         scoreData = await res.json();
 
-        // Build channel checkboxes
+        // Build channel checkboxes with detailed info
         const channelSelect = document.getElementById('channelSelect');
         const channels = scoreData.channels;
         const recommended = ['2', '6'];  // Lead channels with most notes
@@ -451,11 +531,25 @@ async function loadScore() {
             checkbox.checked = recommended.includes(ch);
             checkbox.addEventListener('change', updateSelectedChannels);
 
-            const span = document.createElement('span');
-            span.textContent = `CH${ch} (${notes.length})`;
+            // Program name (instrument)
+            const program = info.program_names?.[0] || 'Unknown';
+            const shortProgram = program.length > 18 ? program.slice(0, 16) + '...' : program;
 
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'ch-info';
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'ch-name';
+            nameDiv.textContent = `CH${ch}: ${shortProgram}`;
+
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'ch-meta';
+            metaDiv.textContent = `${info.note_count} notes | ${info.duration?.toFixed(1) || '?'}s`;
+
+            infoDiv.appendChild(nameDiv);
+            infoDiv.appendChild(metaDiv);
             label.appendChild(checkbox);
-            label.appendChild(span);
+            label.appendChild(infoDiv);
             channelSelect.appendChild(label);
         });
 
@@ -663,7 +757,7 @@ function drawScope() {
 
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = '#00ff41';
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--current-effect-color');
         ctx.lineWidth = 1;
         ctx.beginPath();
 
@@ -680,12 +774,27 @@ function drawScope() {
 
 // Effect selection
 const effectNames = ['phaser', 'echo', 'flanger', 'distortion', 'fm', 'am', 'discont'];
+const effectColors = {
+    phaser: 'var(--color-phaser)',
+    echo: 'var(--color-echo)',
+    flanger: 'var(--color-flanger)',
+    distortion: 'var(--color-distortion)',
+    fm: 'var(--color-fm)',
+    am: 'var(--color-am)',
+    discont: 'var(--color-discont)'
+};
+
+function updateEffectColor(effectName) {
+    document.documentElement.style.setProperty('--current-effect-color', effectColors[effectName]);
+}
+
 document.querySelectorAll('.effect-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const idx = parseInt(btn.dataset.effect);
         currentEffect = effectNames[idx];
+        updateEffectColor(currentEffect);
         updatePotLabels();
         if (set_effect) {
             set_effect(idx);
