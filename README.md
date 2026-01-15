@@ -1,6 +1,18 @@
 # Bad Apple HTML (AudioNoise Guitar)
 
-A standalone WebAudio phaser demo that plays Bad Apple!! guitar scores extracted from MIDI. This directory contains only the new code prepared for a separate public release.
+**[Live Demo](https://akihiko.shirai.as/bad-apple-html/)** | **[日本語版](README.ja.md)** | **[Blog Post (EN)](2026-01-16-wasm-en.md)** | **[ブログ記事 (JA)](2026-01-16-wasm.md)**
+
+All 7 of Linus Torvalds' [AudioNoise](https://github.com/torvalds/AudioNoise) guitar effects running in the browser via WebAssembly, playing Bad Apple!! from MIDI scores.
+
+[![Bad Apple HTML Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
+
+## Features
+
+- **Full Wasm Build**: All effects (phaser, echo, flanger, distortion, fm, am, discont) compiled from original C code
+- **Real-time Effect Switching**: Change effects while playing
+- **Multi-Channel Playback**: Select MIDI channels to play
+- **Oscilloscope Visualization**: See the waveform in real-time
+- **Works Offline**: Single-file version with embedded Wasm (base64)
 
 ## Quick Start
 
@@ -24,10 +36,31 @@ http://localhost:8000/bad-apple-html/
 - **Channel Matrix**: toggle any MIDI channel on/off and choose a note strategy (highest/lowest).
 - **Knobs**: LFO speed, feedback, center frequency, resonance (Q).
 
-## Data
+## Data: JSON Score Format
 
-- `bad_apple_guitar_scores.json` is generated from `alstroemeria_records_bad_apple.mid` using a MIDI parser.
-- Each channel contains monophonic scores (highest/lowest) plus chord metadata.
+`bad_apple_guitar_scores.json` - Parsed MIDI data for programmatic playback:
+
+```json
+{
+  "channels": {
+    "2": {
+      "duration": 180.9,
+      "monophonic": {
+        "highest": [
+          {"f": 440.0, "d": 0.25},  // frequency (Hz), duration (sec)
+          {"f": 493.88, "d": 0.125},
+          ...
+        ]
+      }
+    }
+  }
+}
+```
+
+This format is useful for:
+- Web Audio synthesis demos
+- Music visualization projects
+- MIDI-to-JSON conversion reference
 
 ## Credits & Respect
 
