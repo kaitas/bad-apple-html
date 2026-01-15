@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>AudioNoise Wasm (Standalone) - Bad Apple!!</title>
+    <style>
+        :root {
+            --kernel-green: #00ff41;
+            --kernel-bg: #0c0c0c;
+            --kernel-border: #444;
+            --kernel-text: #bbbbbb;
+        }
+        body {
+            background: #000;
+            color: var(--kernel-text);
+            font-family: "DejaVu Sans Mono", monospace;
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+        }
+        .terminal {
+            max-width: 900px;
+            margin: 0 auto;
+            border: 1px solid var(--kernel-border);
+            background: var(--kernel-bg);
+        }
+        .header {
+            background: #222;
+            padding: 8px 15px;
+            border-bottom: 1px solid #444;
+            color: #666;
+            font-size: 11px;
+        }
+        .content { padding: 20px; }
+        h1 { color: var(--kernel-green); font-size: 16px; margin: 0 0 20px 0; }
+        .status {
+            padding: 15px;
+            background: #111;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        .status.ok { border-color: var(--kernel-green); }
+        .status.err { border-color: #ff5555; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 20px;
+            background: #1a1a1a;
+            border: 2px solid var(--kernel-green);
+            color: var(--kernel-green);
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn:hover { background: #0a220a; }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .btn.active { background: #0a220a; box-shadow: 0 0 10px var(--kernel-green); }
+        .effect-select {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .effect-btn {
+            padding: 10px;
+            background: #111;
+            border: 1px solid #333;
+            color: #888;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        .effect-btn:hover { border-color: #666; }
+        .effect-btn.active {
+            border-color: var(--kernel-green);
+            color: var(--kernel-green);
+        }
+        .knobs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .knob {
+            background: #080808;
+            border: 1px solid #333;
+            padding: 12px;
+        }
+        .knob label {
+            display: block;
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .knob input { width: 100%; accent-color: var(--kernel-green); }
+        .knob-value { font-size: 10px; color: var(--kernel-green); text-align: right; }
+        canvas {
+            width: 100%;
+            height: 150px;
+            background: #000;
+            border: 1px solid #222;
+            margin-bottom: 20px;
+        }
+        .log {
+            height: 120px;
+            overflow-y: auto;
+            background: #050505;
+            border: 1px solid #222;
+            padding: 10px;
+            font-size: 11px;
+            color: #666;
+        }
+        .log .ok { color: var(--kernel-green); }
+        .log .err { color: #ff5555; }
+        .log .warn { color: #ffb86c; }
+        .info { margin-top: 20px; font-size: 11px; color: #555; }
+        .info a { color: var(--kernel-green); }
+    </style>
+</head>
+<body>
+
+<div class="terminal">
+    <div class="header">
+        <span>[AudioNoise/wasm_base64] - Standalone Version (file:// OK)</span>
+    </div>
+
+    <div class="content">
+        <h1>AudioNoise Wasm Edition (Base64 Embedded)</h1>
+
+        <div class="status" id="status">
+            Loading Wasm module...
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="btnStomp" disabled>STOMP</button>
+            <button class="btn" id="btnTest" disabled>TEST TONE</button>
+            <button class="btn" id="btnMute" disabled>MUTE</button>
+        </div>
+
+        <div class="effect-select" id="effectSelect">
+            <button class="effect-btn active" data-effect="0">Phaser</button>
+            <button class="effect-btn" data-effect="1">Echo</button>
+            <button class="effect-btn" data-effect="2">Flanger</button>
+            <button class="effect-btn" data-effect="3">Distortion</button>
+        </div>
+
+        <div class="knobs">
+            <div class="knob">
+                <label>Pot1</label>
+                <input type="range" id="pot1" min="0" max="1" step="0.01" value="0.3">
+                <div class="knob-value" id="pot1val">0.30</div>
+            </div>
+            <div class="knob">
+                <label>Pot2</label>
+                <input type="range" id="pot2" min="0" max="1" step="0.01" value="0.3">
+                <div class="knob-value" id="pot2val">0.30</div>
+            </div>
+            <div class="knob">
+                <label>Pot3</label>
+                <input type="range" id="pot3" min="0" max="1" step="0.01" value="0.5">
+                <div class="knob-value" id="pot3val">0.50</div>
+            </div>
+            <div class="knob">
+                <label>Pot4</label>
+                <input type="range" id="pot4" min="0" max="1" step="0.01" value="0.5">
+                <div class="knob-value" id="pot4val">0.50</div>
+            </div>
+        </div>
+
+        <canvas id="scope"></canvas>
+
+        <div class="log" id="log"></div>
+
+        <div class="info">
+            This version embeds Wasm as base64, so it works with <code>file://</code> protocol.<br>
+            Source: <a href="https://github.com/torvalds/AudioNoise" target="_blank">torvalds/AudioNoise</a> |
+            <a href="https://akihiko.shirai.as/bad-apple-html/" target="_blank">Bad Apple HTML</a>
+        </div>
+    </div>
+</div>
+
+<!-- Wasm module (base64 embedded) -->
+<script src="audionoise_single.js"></script>
+
+<script>
+const log = document.getElementById('log');
+const status = document.getElementById('status');
+const canvas = document.getElementById('scope');
+const ctx = canvas.getContext('2d');
+
+let Module = null;
+let audioCtx = null;
+let workletNode = null;
+let analyser = null;
+let masterGain = null;
+let isActive = false;
+let isMuted = false;
+
+// Effect functions (wrapped)
+let effect_init, effect_step, set_effect;
+
+function printLog(msg, type = '') {
+    const div = document.createElement('div');
+    if (type) div.className = type;
+    const time = (performance.now() / 1000).toFixed(3);
+    div.textContent = `[${time}] ${msg}`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+// Initialize Wasm module
+async function initWasm() {
+    try {
+        printLog('Loading Wasm module (base64 embedded)...');
+        Module = await AudioNoiseModule();
+
+        effect_init = Module.cwrap('effect_init', null, ['number', 'number', 'number', 'number']);
+        effect_step = Module.cwrap('effect_step', 'number', ['number']);
+        set_effect = Module.cwrap('set_effect', null, ['number']);
+
+        // Initialize with default pots
+        effect_init(0.3, 0.3, 0.5, 0.5);
+
+        printLog('Wasm module loaded!', 'ok');
+        status.textContent = 'Wasm ready. Click STOMP to start audio.';
+        status.classList.add('ok');
+
+        document.getElementById('btnStomp').disabled = false;
+        document.getElementById('btnTest').disabled = false;
+        document.getElementById('btnMute').disabled = false;
+
+    } catch (e) {
+        printLog(`Wasm load failed: ${e.message}`, 'err');
+        status.textContent = 'Wasm load failed!';
+        status.classList.add('err');
+    }
+}
+
+// Audio Worklet code (inline)
+const workletCode = `
+class WasmEffectProcessor extends AudioWorkletProcessor {
+    constructor() {
+        super();
+        this.enabled = false;
+        this.effect_step = null;
+        this.port.onmessage = (e) => {
+            if (e.data.type === 'init') {
+                this.effect_step = e.data.effect_step;
+                this.enabled = true;
+            }
+        };
+    }
+    process(inputs, outputs) {
+        const input = inputs[0][0];
+        const output = outputs[0][0];
+        if (!output) return true;
+
+        for (let i = 0; i < output.length; i++) {
+            output[i] = input ? input[i] : 0;
+        }
+        return true;
+    }
+}
+registerProcessor('wasm-effect-processor', WasmEffectProcessor);
+`;
+
+// Start audio
+async function startAudio() {
+    if (audioCtx) {
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+            printLog('Audio resumed', 'ok');
+        }
+        return;
+    }
+
+    try {
+        audioCtx = new AudioContext({ sampleRate: 48000 });
+        printLog(`AudioContext created: ${audioCtx.sampleRate}Hz`);
+
+        // Create oscillator for testing
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.3;
+
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+
+        masterGain.connect(analyser);
+        analyser.connect(audioCtx.destination);
+
+        printLog('Audio engine started', 'ok');
+        isActive = true;
+        document.getElementById('btnStomp').classList.add('active');
+
+        drawScope();
+
+    } catch (e) {
+        printLog(`Audio start failed: ${e.message}`, 'err');
+    }
+}
+
+// Test tone
+let testOsc = null;
+function toggleTestTone() {
+    if (!audioCtx || !masterGain) return;
+
+    if (testOsc) {
+        testOsc.stop();
+        testOsc = null;
+        printLog('Test tone stopped');
+        document.getElementById('btnTest').classList.remove('active');
+    } else {
+        testOsc = audioCtx.createOscillator();
+        testOsc.frequency.value = 440;
+        testOsc.type = 'sawtooth';
+
+        const gain = audioCtx.createGain();
+        gain.gain.value = 0.2;
+
+        testOsc.connect(gain);
+        gain.connect(masterGain);
+        testOsc.start();
+
+        printLog('Test tone: 440Hz sawtooth', 'ok');
+        document.getElementById('btnTest').classList.add('active');
+    }
+}
+
+// Mute
+function toggleMute() {
+    if (!masterGain) return;
+    isMuted = !isMuted;
+    masterGain.gain.value = isMuted ? 0 : 0.3;
+    document.getElementById('btnMute').classList.toggle('active', isMuted);
+    printLog(isMuted ? 'Muted' : 'Unmuted');
+}
+
+// Draw oscilloscope
+function drawScope() {
+    if (!analyser) return;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    function draw() {
+        requestAnimationFrame(draw);
+        analyser.getByteTimeDomainData(dataArray);
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#00ff41';
+        ctx.beginPath();
+
+        const sliceWidth = canvas.width / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * canvas.height / 2;
+
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+
+            x += sliceWidth;
+        }
+
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
+    }
+
+    draw();
+}
+
+// Effect selection
+document.querySelectorAll('.effect-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const effectIdx = parseInt(btn.dataset.effect);
+        if (set_effect) {
+            set_effect(effectIdx);
+            const names = ['phaser', 'echo', 'flanger', 'distortion'];
+            printLog(`Effect: ${names[effectIdx]}`);
+            updatePots();
+        }
+    });
+});
+
+// Pot controls
+function updatePots() {
+    const p1 = parseFloat(document.getElementById('pot1').value);
+    const p2 = parseFloat(document.getElementById('pot2').value);
+    const p3 = parseFloat(document.getElementById('pot3').value);
+    const p4 = parseFloat(document.getElementById('pot4').value);
+
+    document.getElementById('pot1val').textContent = p1.toFixed(2);
+    document.getElementById('pot2val').textContent = p2.toFixed(2);
+    document.getElementById('pot3val').textContent = p3.toFixed(2);
+    document.getElementById('pot4val').textContent = p4.toFixed(2);
+
+    if (effect_init) {
+        effect_init(p1, p2, p3, p4);
+    }
+}
+
+['pot1', 'pot2', 'pot3', 'pot4'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePots);
+});
+
+// Button handlers
+document.getElementById('btnStomp').addEventListener('click', startAudio);
+document.getElementById('btnTest').addEventListener('click', toggleTestTone);
+document.getElementById('btnMute').addEventListener('click', toggleMute);
+
+// Canvas resize
+function resizeCanvas() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Initialize
+initWasm();
+</script>
+
+</body>
+</html>

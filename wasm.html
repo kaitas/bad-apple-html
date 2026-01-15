@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>AudioNoise Wasm - Bad Apple!!</title>
+    <style>
+        :root {
+            --kernel-green: #00ff41;
+            --kernel-bg: #0c0c0c;
+            --kernel-border: #444;
+            --kernel-text: #bbbbbb;
+        }
+        body {
+            background: #000;
+            color: var(--kernel-text);
+            font-family: "DejaVu Sans Mono", monospace;
+            margin: 0;
+            padding: 20px;
+            font-size: 13px;
+        }
+        .terminal {
+            max-width: 900px;
+            margin: 0 auto;
+            border: 1px solid var(--kernel-border);
+            background: var(--kernel-bg);
+        }
+        .header {
+            background: #222;
+            padding: 8px 15px;
+            border-bottom: 1px solid #444;
+            color: #666;
+            font-size: 11px;
+        }
+        .content { padding: 20px; }
+        h1 { color: var(--kernel-green); font-size: 16px; margin: 0 0 20px 0; }
+        .status {
+            padding: 15px;
+            background: #111;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 12px 20px;
+            background: #1a1a1a;
+            border: 2px solid var(--kernel-green);
+            color: var(--kernel-green);
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn:hover { background: #0a220a; }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .effect-select {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .effect-btn {
+            padding: 10px;
+            background: #111;
+            border: 1px solid #333;
+            color: #888;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .effect-btn.active {
+            border-color: var(--kernel-green);
+            color: var(--kernel-green);
+        }
+        .knobs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .knob {
+            background: #080808;
+            border: 1px solid #333;
+            padding: 12px;
+        }
+        .knob label {
+            display: block;
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .knob input { width: 100%; accent-color: var(--kernel-green); }
+        canvas {
+            width: 100%;
+            height: 150px;
+            background: #000;
+            border: 1px solid #222;
+            margin-bottom: 20px;
+        }
+        .log {
+            height: 120px;
+            overflow-y: auto;
+            background: #050505;
+            border: 1px solid #222;
+            padding: 10px;
+            font-size: 11px;
+            color: #666;
+        }
+        .log .ok { color: var(--kernel-green); }
+        .log .err { color: #ff5555; }
+        .log .warn { color: #ffb86c; }
+    </style>
+</head>
+<body>
+
+<div class="terminal">
+    <div class="header">
+        <span>[AudioNoise/wasm] - Full Effect Chain via WebAssembly</span>
+    </div>
+
+    <div class="content">
+        <h1>AudioNoise Wasm Edition</h1>
+
+        <div class="status" id="status">
+            Wasm module not loaded. Install emscripten and build first.
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="btnStomp" disabled>STOMP</button>
+            <button class="btn" id="btnPlay" disabled>PLAY</button>
+            <button class="btn" id="btnMute" disabled>MUTE</button>
+        </div>
+
+        <div class="effect-select">
+            <button class="effect-btn active" data-effect="phaser">PHASER</button>
+            <button class="effect-btn" data-effect="flanger">FLANGER</button>
+            <button class="effect-btn" data-effect="echo">ECHO</button>
+            <button class="effect-btn" data-effect="distortion">DISTORTION</button>
+        </div>
+
+        <div class="knobs">
+            <div class="knob">
+                <label>Pot1</label>
+                <input type="range" id="pot1" min="0" max="1" step="0.01" value="0.3">
+            </div>
+            <div class="knob">
+                <label>Pot2</label>
+                <input type="range" id="pot2" min="0" max="1" step="0.01" value="0.3">
+            </div>
+            <div class="knob">
+                <label>Pot3</label>
+                <input type="range" id="pot3" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            <div class="knob">
+                <label>Pot4</label>
+                <input type="range" id="pot4" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </div>
+
+        <canvas id="scope"></canvas>
+
+        <div class="log" id="log">
+            <div class="warn">[wasm] Module not loaded</div>
+            <div>[wasm] Build with: cd src && make wasm</div>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * AudioNoise Wasm Edition
+ *
+ * TODO:
+ * 1. Build Wasm module from AudioNoise C code
+ *    $ cd src && emcc convert.c -o audionoise.js -s WASM=1 -s EXPORTED_FUNCTIONS="[...]"
+ *
+ * 2. Load Wasm in AudioWorklet
+ *    - Import audionoise.wasm
+ *    - Call effect_init() / effect_step() per sample
+ *
+ * 3. Connect to score scheduler
+ *    - Load bad_apple_guitar_scores.json
+ *    - Schedule notes through Wasm DSP
+ */
+
+const log = document.getElementById('log');
+const status = document.getElementById('status');
+
+function printLog(msg, type = '') {
+    const div = document.createElement('div');
+    if (type) div.className = type;
+    div.textContent = `[${(performance.now()/1000).toFixed(3)}] ${msg}`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+// Effect selection
+document.querySelectorAll('.effect-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        printLog(`Effect: ${btn.dataset.effect}`);
+    });
+});
+
+// Placeholder for Wasm loading
+async function loadWasm() {
+    try {
+        // TODO: Load compiled Wasm module
+        // const module = await WebAssembly.instantiateStreaming(fetch('src/audionoise.wasm'));
+        printLog('Wasm module loading...', 'warn');
+        printLog('Not implemented yet. Build required.', 'err');
+        return null;
+    } catch (e) {
+        printLog(`Wasm load failed: ${e.message}`, 'err');
+        return null;
+    }
+}
+
+// Initialize
+printLog('AudioNoise Wasm Edition');
+printLog('Waiting for Wasm build...');
+
+// Check if wasm file exists
+fetch('src/audionoise.wasm')
+    .then(r => {
+        if (r.ok) {
+            printLog('Wasm file found!', 'ok');
+            status.textContent = 'Wasm module found. Ready to initialize.';
+            document.getElementById('btnStomp').disabled = false;
+        } else {
+            throw new Error('Not found');
+        }
+    })
+    .catch(() => {
+        printLog('Wasm not built. Run: make wasm', 'warn');
+    });
+</script>
+
+</body>
+</html>

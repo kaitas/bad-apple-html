@@ -2,19 +2,38 @@
 
 Bad Apple!! のMIDIから抽出したギタースコアを、AudioNoise風のフェイザーで再生するデモです。公開用に新規コードのみをまとめています。
 
+## デモ
+
+**GitHub Pages**: https://akihiko.shirai.as/bad-apple-html/
+
 ## 使い方
 
-1) ローカルサーバを起動
+### オンライン版（推奨）
+
+上記URLにアクセスするだけで動作します。
+
+### ローカル実行
 
 ```bash
+# サーバを起動
 python3 -m http.server 8000
+
+# ブラウザで開く
+open http://localhost:8000/
 ```
 
-2) ブラウザで開く
+### なぜHTTPサーバが必要？
 
-```text
-http://localhost:8000/bad-apple-html/
-```
+`file://` プロトコルでは以下の制限があり動作しません：
+
+| 機能 | 制限理由 |
+|------|----------|
+| `fetch()` | CORS (Same-Origin Policy) |
+| WebAssembly | `instantiateStreaming()` はHTTP必須 |
+| AudioWorklet | セキュリティ制限 |
+| ES Modules | `type="module"` が file:// で制限 |
+
+**回避策**: `wasm_base64.html` は Wasm を base64 埋め込みしているため、file:// でも動作します（ただしファイルサイズが大きくなります）。
 
 ## 操作
 
