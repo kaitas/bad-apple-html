@@ -16,10 +16,10 @@
             font-family: "DejaVu Sans Mono", monospace;
             margin: 0;
             padding: 20px;
-            font-size: 15px;
+            font-size: 16px;
         }
         .terminal {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
             border: 1px solid var(--kernel-border);
             background: var(--kernel-bg);
@@ -31,8 +31,8 @@
             color: #888;
             font-size: 13px;
         }
-        .content { padding: 20px; }
-        h1 { color: var(--kernel-green); font-size: 20px; margin: 0 0 20px 0; }
+        .content { padding: 25px; }
+        h1 { color: var(--kernel-green); font-size: 24px; margin: 0 0 20px 0; }
         .status {
             padding: 15px;
             background: #111;
@@ -81,19 +81,32 @@
             margin-bottom: 20px;
         }
         .effect-btn {
-            padding: 12px 16px;
+            padding: 14px 18px;
             background: #111;
             border: 1px solid #333;
             color: #888;
             font-family: inherit;
             cursor: pointer;
             text-transform: uppercase;
-            font-size: 13px;
+            font-size: 14px;
+            font-weight: bold;
         }
         .effect-btn:hover { border-color: #666; }
         .effect-btn.active {
             border-color: var(--kernel-green);
             color: var(--kernel-green);
+        }
+        .effect-btn.synth {
+            border-color: #666;
+            color: #ff9800;
+        }
+        .effect-btn.synth:hover {
+            border-color: #ff9800;
+        }
+        .effect-btn.synth.active {
+            border-color: #ff9800;
+            color: #ff9800;
+            box-shadow: 0 0 8px #ff980044;
         }
         .channels {
             display: flex;
@@ -129,13 +142,13 @@
         }
         .knob label {
             display: block;
-            color: #888;
-            font-size: 12px;
-            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 13px;
+            margin-bottom: 10px;
             text-transform: uppercase;
         }
-        .knob input { width: 100%; accent-color: var(--kernel-green); }
-        .knob-value { font-size: 12px; color: var(--kernel-green); text-align: right; }
+        .knob input { width: 100%; accent-color: var(--kernel-green); height: 8px; }
+        .knob-value { font-size: 14px; color: var(--kernel-green); text-align: right; margin-top: 5px; }
         canvas {
             width: 100%;
             height: 120px;
@@ -177,15 +190,21 @@
             bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
-            background: #222;
+            background: #1a1a1a;
             border: 1px solid var(--kernel-green);
-            padding: 8px 12px;
-            font-size: 11px;
+            padding: 12px 16px;
+            font-size: 12px;
+            line-height: 1.5;
             white-space: pre-line;
-            max-width: 200px;
+            max-width: 280px;
             z-index: 100;
-            color: #ccc;
+            color: #ddd;
             text-transform: none;
+            font-weight: normal;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .effect-btn.synth:hover::after {
+            border-color: #ff9800;
         }
     </style>
 </head>
@@ -222,8 +241,8 @@
             <button class="effect-btn" data-effect="1" data-i18n-title="echo_tip">Echo</button>
             <button class="effect-btn" data-effect="2" data-i18n-title="flanger_tip">Flanger</button>
             <button class="effect-btn" data-effect="3" data-i18n-title="distortion_tip">Distortion</button>
-            <button class="effect-btn" data-effect="4" data-i18n-title="fm_tip">FM</button>
-            <button class="effect-btn" data-effect="5" data-i18n-title="am_tip">AM</button>
+            <button class="effect-btn synth" data-effect="4" data-i18n-title="fm_tip">FM</button>
+            <button class="effect-btn synth" data-effect="5" data-i18n-title="am_tip">AM</button>
             <button class="effect-btn" data-effect="6" data-i18n-title="discont_tip">Discont</button>
         </div>
 
@@ -280,23 +299,23 @@
 const i18n = {
     en: {
         bpm: 'BPM',
-        phaser_tip: 'Phaser\n4-stage allpass filter\nClassic sweeping sound',
-        echo_tip: 'Echo\nDelay + feedback\nSpace and depth',
-        flanger_tip: 'Flanger\nModulated short delay\nPot1=speed Pot2=delay\nPot3=depth Pot4=feedback',
-        distortion_tip: 'Distortion\nHard/soft clipping\nAggressive tone',
-        fm_tip: 'FM (Synth)\n⚠️ Ignores input!\nGenerates bell tones\nPot2=freq Pot4=mod',
-        am_tip: 'AM (Synth)\n⚠️ Ignores input!\nTremolo generator\nPot2=freq Pot4=mod',
-        discont_tip: 'Discont\nPitch shifter\nPot1=ratio (0.5-2x)'
+        phaser_tip: '🎸 Phaser\n4-stage biquad allpass\nLFO: 32-bit phase accumulator\n"The classic 70s swoosh"\nLinus uses triangle wave LFO',
+        echo_tip: '🎸 Echo\n65536-sample delay line (~1.3s)\nLinear interpolation for\nfractional delay reads\nPot1=delay Pot4=feedback',
+        flanger_tip: '🎸 Flanger\n0-4ms modulated delay\nShort delay + LFO = jet sound\nPot1=speed Pot2=delay\nPot3=depth Pot4=feedback',
+        distortion_tip: '🎸 Distortion\nsoft_clip: x/(1+|x|)\nLinus\' tanh approximation\nPot1=drive(1-50x) Pot2=tone\nPot3=level Pot4=mode',
+        fm_tip: '🔶 FM Synth\n⚠️ IGNORES INPUT!\nLinus\' test tone generator\nBell-like DX7 vibes\nPot2=carrier Pot4=mod freq',
+        am_tip: '🔶 AM Synth\n⚠️ IGNORES INPUT!\nLinus\' test tone generator\nClassic tremolo synthesis\nPot2=carrier Pot4=mod freq',
+        discont_tip: '🎸 Discont\nPitch shifter with\nsin²/cos² crossfade\nHides discontinuities\nPot1=0→octave down'
     },
     ja: {
         bpm: 'テンポ',
-        phaser_tip: 'フェイザー\n4段オールパスフィルタ\nうねるようなサウンド',
-        echo_tip: 'エコー\nディレイ＋フィードバック\n空間と奥行き',
-        flanger_tip: 'フランジャー\n変調ショートディレイ\nPot1=速度 Pot2=遅延\nPot3=深さ Pot4=FB',
-        distortion_tip: 'ディストーション\nハード/ソフトクリップ\n攻撃的なトーン',
-        fm_tip: 'FM (シンセ)\n⚠️ 入力を無視!\nベル音を生成\nPot2=周波数 Pot4=変調',
-        am_tip: 'AM (シンセ)\n⚠️ 入力を無視!\nトレモロ生成\nPot2=周波数 Pot4=変調',
-        discont_tip: 'ディスコント\nピッチシフター\nPot1=比率 (0.5-2倍)'
+        phaser_tip: '🎸 フェイザー\n4段バイクアッド・オールパス\nLFO: 32bit位相アキュムレータ\n「70年代の定番サウンド」\nLinus製の三角波LFO',
+        echo_tip: '🎸 エコー\n65536サンプル遅延線(約1.3秒)\n分数サンプルは線形補間\nPot1=遅延時間 Pot4=FB\nfastpow()でスムーズ減衰',
+        flanger_tip: '🎸 フランジャー\n0-4ms 変調ディレイ\n短い遅延+LFO=ジェット音\nPot1=速度 Pot2=遅延\nPot3=深さ Pot4=FB',
+        distortion_tip: '🎸 ディストーション\nsoft_clip: x/(1+|x|)\nLinusのtanh近似実装\nPot1=増幅(1-50倍) Pot2=トーン\nPot3=出力 Pot4=モード',
+        fm_tip: '🔶 FMシンセ\n⚠️ 入力を完全無視!\nLinusのテストトーン生成器\nDX7っぽいベル音\nPot2=キャリア Pot4=変調周波数',
+        am_tip: '🔶 AMシンセ\n⚠️ 入力を完全無視!\nLinusのテストトーン生成器\n古典的トレモロ合成\nPot2=キャリア Pot4=変調周波数',
+        discont_tip: '🎸 ディスコント\nピッチシフター\nsin²/cos²クロスフェード\n不連続点を隠す技法\nPot1=0→1オクターブ下'
     }
 };
 
