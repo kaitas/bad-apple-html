@@ -65,6 +65,12 @@ static float current_pots[4] = {0.3f, 0.3f, 0.5f, 0.5f};
 // Forward declaration
 EXPORT void effect_init(float pot1, float pot2, float pot3, float pot4);
 
+// Force effect_delay to match target (skip smooth transition)
+static void sync_effect_delay(void) {
+    extern float effect_delay, target_effect_delay;
+    effect_delay = target_effect_delay;
+}
+
 // Effect names for JavaScript
 static const char* effect_names[] = {
     "phaser",
@@ -109,9 +115,11 @@ EXPORT void effect_init(float pot1, float pot2, float pot3, float pot4) {
             break;
         case EFFECT_ECHO:
             echo_init(pot1, pot2, pot3, pot4);
+            sync_effect_delay();  // Echo uses delay line
             break;
         case EFFECT_FLANGER:
             flanger_init(pot1, pot2, pot3, pot4);
+            sync_effect_delay();  // Flanger uses delay line
             break;
         case EFFECT_DISTORTION:
             distortion_init(pot1, pot2, pot3, pot4);
