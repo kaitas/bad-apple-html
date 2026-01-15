@@ -4,7 +4,7 @@
 
 All 7 of Linus Torvalds' [AudioNoise](https://github.com/torvalds/AudioNoise) guitar effects running in the browser via WebAssembly, playing Bad Apple!! from MIDI scores.
 
-[![Bad Apple HTML Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
+[![Bad Apple HTML Demo](https://img.youtube.com/vi/_5ruHnVR9sI/0.jpg)](https://www.youtube.com/watch?v=_5ruHnVR9sI)
 
 ## Features
 
