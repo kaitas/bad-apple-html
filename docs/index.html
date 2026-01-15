@@ -211,8 +211,8 @@
 
         <div class="bpm-control">
             <label data-i18n="bpm">BPM</label>
-            <input type="range" id="bpmSlider" min="50" max="200" step="1" value="138">
-            <span id="bpmValue">138</span>
+            <input type="range" id="bpmSlider" min="50" max="200" step="1" value="200">
+            <span id="bpmValue">200</span>
         </div>
 
         <div class="progress-bar"><div class="fill" id="progress"></div></div>
@@ -282,21 +282,21 @@ const i18n = {
         bpm: 'BPM',
         phaser_tip: 'Phaser\n4-stage allpass filter\nClassic sweeping sound',
         echo_tip: 'Echo\nDelay + feedback\nSpace and depth',
-        flanger_tip: 'Flanger\nModulated short delay\nJet-like swoosh',
+        flanger_tip: 'Flanger\nModulated short delay\nPot1=speed Pot2=delay\nPot3=depth Pot4=feedback',
         distortion_tip: 'Distortion\nHard/soft clipping\nAggressive tone',
-        fm_tip: 'FM\nFrequency modulation\nBell-like tones',
-        am_tip: 'AM\nAmplitude modulation\nTremolo effect',
-        discont_tip: 'Discont\nPitch shifter\nOctave up/down'
+        fm_tip: 'FM (Synth)\n⚠️ Ignores input!\nGenerates bell tones\nPot2=freq Pot4=mod',
+        am_tip: 'AM (Synth)\n⚠️ Ignores input!\nTremolo generator\nPot2=freq Pot4=mod',
+        discont_tip: 'Discont\nPitch shifter\nPot1=ratio (0.5-2x)'
     },
     ja: {
         bpm: 'テンポ',
         phaser_tip: 'フェイザー\n4段オールパスフィルタ\nうねるようなサウンド',
         echo_tip: 'エコー\nディレイ＋フィードバック\n空間と奥行き',
-        flanger_tip: 'フランジャー\n変調ショートディレイ\nジェット機のような音',
+        flanger_tip: 'フランジャー\n変調ショートディレイ\nPot1=速度 Pot2=遅延\nPot3=深さ Pot4=FB',
         distortion_tip: 'ディストーション\nハード/ソフトクリップ\n攻撃的なトーン',
-        fm_tip: 'FM変調\n周波数変調\nベルのような音色',
-        am_tip: 'AM変調\n振幅変調\nトレモロ効果',
-        discont_tip: 'ディスコント\nピッチシフター\nオクターブ上下'
+        fm_tip: 'FM (シンセ)\n⚠️ 入力を無視!\nベル音を生成\nPot2=周波数 Pot4=変調',
+        am_tip: 'AM (シンセ)\n⚠️ 入力を無視!\nトレモロ生成\nPot2=周波数 Pot4=変調',
+        discont_tip: 'ディスコント\nピッチシフター\nPot1=比率 (0.5-2倍)'
     }
 };
 
@@ -341,7 +341,7 @@ let scoreIndex = 0;
 let scoreNotes = [];
 let startTime = 0;
 let totalDuration = 0;
-let bpmMultiplier = 1.0;  // BPM調整用
+let bpmMultiplier = 138 / 200;  // BPM調整用 (default 200 BPM)
 
 function printLog(msg, type = '') {
     const div = document.createElement('div');
