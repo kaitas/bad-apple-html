@@ -183,9 +183,9 @@
         .bpm-control input { flex: 1; accent-color: var(--kernel-green); }
         .bpm-control span { color: var(--kernel-green); font-size: 14px; min-width: 40px; }
         .lang-btn { min-width: 50px; font-size: 18px; }
-        .effect-btn[title] { position: relative; }
+        .effect-btn[data-tip] { position: relative; }
         .effect-btn:hover::after {
-            content: attr(title);
+            content: attr(data-tip);
             position: absolute;
             bottom: 100%;
             left: 50%;
@@ -205,6 +205,25 @@
         }
         .effect-btn.synth:hover::after {
             border-color: #ff9800;
+        }
+        .beat-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+        .beat-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #333;
+            transition: all 0.05s;
+        }
+        .beat-dot.pulse {
+            background: var(--kernel-green);
+            box-shadow: 0 0 12px var(--kernel-green);
         }
     </style>
 </head>
@@ -235,6 +254,10 @@
         </div>
 
         <div class="progress-bar"><div class="fill" id="progress"></div></div>
+        <div class="beat-indicator">
+            <span id="beatDot" class="beat-dot"></span>
+            <span id="beatCount">--</span>
+        </div>
 
         <div class="effect-select" id="effectSelect">
             <button class="effect-btn active" data-effect="0" data-i18n-title="phaser_tip">Phaser</button>
@@ -329,7 +352,7 @@ function updateI18n() {
     });
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.dataset.i18nTitle;
-        if (lang[key]) el.title = lang[key];
+        if (lang[key]) el.dataset.tip = lang[key];
     });
     document.getElementById('btnLang').textContent = currentLang === 'ja' ? '🇬🇧' : '🇯🇵';
 }
@@ -361,6 +384,7 @@ let scoreNotes = [];
 let startTime = 0;
 let totalDuration = 0;
 let bpmMultiplier = 138 / 200;  // BPM調整用 (default 200 BPM)
+let lastNoteIndex = -1;  // ビート検出用
 
 function printLog(msg, type = '') {
     const div = document.createElement('div');
@@ -471,8 +495,8 @@ async function startAudio() {
     try {
         audioCtx = new AudioContext({ sampleRate: 48000 });
 
-        // ScriptProcessorNode for Wasm processing
-        scriptNode = audioCtx.createScriptProcessor(2048, 0, 1);
+        // ScriptProcessorNode for Wasm processing (512 samples = ~10ms for tighter timing)
+        scriptNode = audioCtx.createScriptProcessor(512, 0, 1);
         scriptNode.onaudioprocess = processAudio;
 
         masterGain = audioCtx.createGain();
@@ -512,6 +536,16 @@ function processAudio(e) {
             // Update progress
             const elapsed = now - startTime;
             progress.style.width = Math.min(100, (elapsed / (totalDuration * bpmMultiplier)) * 100) + '%';
+
+            // Beat indicator pulse (UIスレッドで実行)
+            if (scoreIndex !== lastNoteIndex) {
+                lastNoteIndex = scoreIndex;
+                const beatDot = document.getElementById('beatDot');
+                const beatCount = document.getElementById('beatCount');
+                beatDot.classList.add('pulse');
+                beatCount.textContent = scoreIndex + '/' + scoreNotes.length;
+                setTimeout(() => beatDot.classList.remove('pulse'), 80);
+            }
         }
 
         // Generate sawtooth wave
@@ -568,8 +602,11 @@ function stopScore() {
     isPlaying = false;
     currentFreq = 0;
     scoreIndex = 0;
+    lastNoteIndex = -1;
     progress.style.width = '0%';
     document.getElementById('btnPlay').classList.remove('active');
+    document.getElementById('beatDot').classList.remove('pulse');
+    document.getElementById('beatCount').textContent = '--';
 }
 
 // Toggle mute
