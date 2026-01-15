@@ -430,8 +430,9 @@ const potLabels = {
 };
 
 // Potの値の意味 (0.0-1.0 → 実際の値)
+// Note: Phaser pot3 limited to 0.5 due to filter instability bug in original code
 const potRanges = {
-    phaser:     ['25-2000ms', '0-75%', '50-880Hz', '0.25-2.0'],
+    phaser:     ['25-2000ms', '0-75%', '50-440Hz*', '0.25-2.0'],
     echo:       ['0-1000ms', '-', '0-4ms', '0-100%'],
     flanger:    ['0-10Hz²', '0-4ms', '0-100%', '0-100%'],
     distortion: ['1-50x', '1-10kHz', '0-100%', 'soft/hard/asym'],
@@ -805,9 +806,26 @@ document.querySelectorAll('.effect-btn').forEach(btn => {
 });
 
 // Pot controls
+// Safety limits per effect (Linus's phaser has a bug: pot3>0.5 causes filter instability)
+const potLimits = {
+    phaser: [1, 1, 0.5, 1],  // pot3 max 0.5 to avoid >Nyquist frequencies
+    echo: [1, 1, 1, 1],
+    flanger: [1, 1, 1, 1],
+    distortion: [1, 1, 1, 1],
+    fm: [1, 1, 1, 1],
+    am: [1, 1, 1, 1],
+    discont: [1, 1, 1, 1]
+};
+
 function updatePots() {
-    const pots = ['pot1', 'pot2', 'pot3', 'pot4'].map(id => {
-        const val = parseFloat(document.getElementById(id).value);
+    const limits = potLimits[currentEffect] || [1, 1, 1, 1];
+    const pots = ['pot1', 'pot2', 'pot3', 'pot4'].map((id, i) => {
+        let val = parseFloat(document.getElementById(id).value);
+        // Apply safety limit
+        if (val > limits[i]) {
+            val = limits[i];
+            document.getElementById(id).value = val;
+        }
         document.getElementById(id + 'val').textContent = val.toFixed(2);
         return val;
     });
