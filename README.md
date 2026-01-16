@@ -4,7 +4,11 @@
 
 All 7 of Linus Torvalds' [AudioNoise](https://github.com/torvalds/AudioNoise) guitar effects running in the browser via WebAssembly, playing Bad Apple!! from MIDI scores.
 
-[![Bad Apple HTML Demo](https://img.youtube.com/vi/_5ruHnVR9sI/0.jpg)](https://www.youtube.com/watch?v=_5ruHnVR9sI)
+### Wasm Version (Full Effects)
+[![Bad Apple Wasm Demo](https://img.youtube.com/vi/_5ruHnVR9sI/0.jpg)](https://www.youtube.com/watch?v=_5ruHnVR9sI)
+
+### HTML Version (Simple JS Phaser)
+[![Bad Apple HTML Demo](https://img.youtube.com/vi/1kPKrw_lNNM/0.jpg)](https://www.youtube.com/watch?v=1kPKrw_lNNM)
 
 ## Features
 
@@ -88,11 +92,20 @@ This format is useful for:
 
 ## Credits & Respect
 
-- Audio effect core inspired by **Linus Torvalds' AudioNoise** (GPL-2.0).
-- **Bad Apple!!** original composition by **ZUN** (Touhou Project).
-- **Bad Apple!! MV** by **Alstroemeria Records**.
-- **MIDI arrangement** by **Ronald Macdonald** (YouTube).
-- **MIDI file source URL**: https://github.com/CalvinLoke/bad-apple (contains `alstroemeria_records_bad_apple.mid`).
+### Audio Effects
+- **[Linus Torvalds' AudioNoise](https://github.com/torvalds/AudioNoise)** (GPL-2.0) - Original C implementation of guitar effects
+- Found a bug in phaser.h! → [Issue #59](https://github.com/torvalds/AudioNoise/issues/59)
+
+### Bad Apple!!
+- **Original composition**: ZUN (Touhou Project)
+- **Bad Apple!! feat. nomico**: Alstroemeria Records
+- **MIDI arrangement**: Ronald Macdonald ([YouTube](https://www.youtube.com/watch?v=FtutLA63Cp8))
+- **MIDI file source**: https://github.com/CalvinLoke/bad-apple
+
+### Project
+- **Author**: [Akihiko SHIRAI](https://github.com/kaitas) / [@o_ob](https://x.com/o_ob)
+- **Blog post**: [VibeCoding #14](https://note.com/o_ob/n/nf596c20a7bc5)
+- **AICU (AI Creators Union)**: [YouTube](https://www.youtube.com/@aaborning) | [Tech Blog](https://note.com/aicu/m/m2a2f46d9b1c7)
 
 ## License
 

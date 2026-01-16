@@ -1,10 +1,16 @@
 # Bad Apple HTML (AudioNoise Guitar)
 
-Bad Apple!! のMIDIから抽出したギタースコアを、AudioNoise風のフェイザーで再生するデモです。公開用に新規コードのみをまとめています。
+Bad Apple!! のMIDIから抽出したギタースコアを、Linus Torvaldsの[AudioNoise](https://github.com/torvalds/AudioNoise)エフェクトで再生するデモです。WebAssemblyで全7エフェクトを実装。
 
 ## デモ
 
 **GitHub Pages**: https://akihiko.shirai.as/bad-apple-html/
+
+### Wasm版（全エフェクト対応）
+[![Bad Apple Wasm Demo](https://img.youtube.com/vi/_5ruHnVR9sI/0.jpg)](https://www.youtube.com/watch?v=_5ruHnVR9sI)
+
+### HTML版（JSフェイザーのみ）
+[![Bad Apple HTML Demo](https://img.youtube.com/vi/1kPKrw_lNNM/0.jpg)](https://www.youtube.com/watch?v=1kPKrw_lNNM)
 
 ## 使い方
 
@@ -74,11 +80,20 @@ Linusの設計では、4つのポットが各エフェクトで異なる役割�
 
 ## クレジット / リスペクト
 
-- オーディオエフェクトの核は **Linus Torvalds の AudioNoise** (GPL-2.0) に強くインスパイアされています。
-- **Bad Apple!!** 原曲: **ZUN**（東方Project）。
-- **Bad Apple!! MV**: **Alstroemeria Records**。
-- **MIDIアレンジ**: **Ronald Macdonald**（YouTube）。
-- **MIDI配布元URL**: https://github.com/CalvinLoke/bad-apple （`alstroemeria_records_bad_apple.mid` を含むリポジトリ）。
+### オーディオエフェクト
+- **[Linus Torvalds の AudioNoise](https://github.com/torvalds/AudioNoise)** (GPL-2.0) - ギターエフェクトのC実装
+- Phaserにバグを発見！ → [Issue #59](https://github.com/torvalds/AudioNoise/issues/59)
+
+### Bad Apple!!
+- **原曲**: ZUN（東方Project）
+- **Bad Apple!! feat. nomico**: Alstroemeria Records
+- **MIDIアレンジ**: Ronald Macdonald ([YouTube](https://www.youtube.com/watch?v=FtutLA63Cp8))
+- **MIDI配布元**: https://github.com/CalvinLoke/bad-apple
+
+### プロジェクト
+- **作者**: [白井暁彦](https://github.com/kaitas) / [@o_ob](https://x.com/o_ob)
+- **ブログ記事**: [VibeCoding #14](https://note.com/o_ob/n/nf596c20a7bc5)
+- **AICU (AI Creators Union)**: [YouTube](https://www.youtube.com/@aaborning) | [Tech Blog](https://note.com/aicu/m/m2a2f46d9b1c7)
 
 ## ライセンス
 
